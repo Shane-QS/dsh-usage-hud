@@ -1,0 +1,8 @@
+# dsh-usage-hud bundle patch
+#
+# 一行 Host 插件：在宿主 webServer 上挂 GET /usage-hud/api/state，
+# 浏览器半侧（client.js）把它画成侧栏底部那块 + 输入框下方一行。
+- insert:
+    - id: usage-hud
+      name: 'dsh-usage-hud'
+      inject: [webServer]

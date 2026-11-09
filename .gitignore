@@ -1,0 +1,22 @@
+node_modules/
+dist/
+tmp/
+*.log
+
+# 调试残留
+_tmp_*
+chk-*.png
+pull-*.png
+pv-*.png
+pg-*.png
+edge-*.png
+*v*.png
+*.mp4
+
+# 允许 docs 下的截图
+!docs/screenshot.png
+
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

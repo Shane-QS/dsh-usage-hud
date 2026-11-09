@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>棱线光 · A（楔形双层） vs C（角部径向）</title>
+<style>
+  :root { color-scheme: dark }
+  body {
+    margin: 0; padding: 22px; background: #0f1115; color: #d7dae0;
+    font: 13px/1.55 -apple-system, "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+  }
+  h1 { font-size: 15px; margin: 0 0 4px }
+  .tip { font-size: 12px; opacity: .55; margin-bottom: 16px }
+  .bar { display: flex; gap: 8px; align-items: center; margin-bottom: 18px; font-size: 12px; opacity: .8 }
+  .grid { display: flex; flex-direction: column; gap: 26px; width: 360px }
+
+  .case h2 { font-size: 12.5px; margin: 0 0 6px; font-weight: 600; color: #a9b4c4 }
+  .case h2 em { font-style: normal; color: #6b7686; font-weight: 400; margin-left: 6px; font-size: 11.5px }
+
+  .box {
+    position: relative; isolation: isolate; overflow: hidden;
+    width: 330px; border-radius: 10px;
+    background: rgba(128,128,128,.10); border: 1px solid rgba(128,128,128,.14);
+    font-size: 11px; user-select: none;
+  }
+  .row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 5px }
+  .left { display: flex; align-items: baseline; gap: 6px }
+  .lbl { opacity: .55; font-size: 11px }
+  .val { font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums }
+  .accent { color: #4d6bfe }
+  .dot { width: 6px; height: 6px; border-radius: 3px; background: #4d6bfe; display: inline-block }
+  .bar2 { height: 2px; border-radius: 1px; background: rgba(128,128,128,.22); overflow: hidden; margin-top: 3px }
+  .bar2 > i { display: block; width: 26%; height: 100%; background: #4d6bfe }
+
+  /* 三层同框：spacer 撑高度，base/warp 都是 inset:0 的绝对层，盒子完全一致 */
+  .spacer { padding: 8px 10px 9px; visibility: hidden }
+  .layer { position: absolute; inset: 0; padding: 8px 10px 9px; box-sizing: border-box }
+  .warp { filter: url(#liquid); display: none; z-index: 2; pointer-events: none }
+
+  .box.on .base { animation: base-clip .8s cubic-bezier(.3,.6,.3,1) forwards }
+  @keyframes base-clip { from { clip-path: inset(0 100% 0 0) } to { clip-path: inset(0 0 0 0) } }
+  .box.on .warp { display: block; animation: warp-clip .8s cubic-bezier(.3,.6,.3,1) forwards }
+  @keyframes warp-clip { from { clip-path: inset(0 0 0 0%) } to { clip-path: inset(0 0 0 100%) } }
+  .box.hold.bulging .base { clip-path: inset(0 65% 0 0) }
+  .box.hold.bulging .warp { display: block; clip-path: inset(0 0 0 35%) }
+
+  /* 玻璃片 */
+  .sheet {
+    position: absolute; top: 0; bottom: 0; left: 35%; width: 100%; z-index: 3;
+    border-radius: inherit; pointer-events: none; background: transparent; display: none;
+    box-shadow:
+      inset 3px 0 1px -1.2px rgba(255,255,255,.95), /* 左棱 3px 白 .95 */
+      0 0 10px rgba(150,220,255,.55),
+      0 0 22px rgba(255,110,210,.32),
+      0 0 40px rgba(120,170,255,.16);
+  }
+  .box.hold .sheet { display: block; left: 35% }
+  .box.on .sheet { display: block; animation: sweep .8s cubic-bezier(.3,.6,.3,1) forwards }
+  @keyframes sweep { 0% { left: -6%; opacity: 0 } 6% { opacity: 1 } 84% { opacity: 1 } 100% { left: 100%; opacity: 0 } }
+
+  .sheet .glow { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; pointer-events: none }
+  /* 竖的色散带：白 → 白 → 品红 */
+  .sheet .glow::after {
+    content: ""; position: absolute; left: -2px; top: 0; bottom: 0; width: 10px;
+    background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.68) 18%, rgba(255,255,255,.58) 46%, rgba(255,60,190,.48) 74%, rgba(255,60,190,0));
+    filter: blur(2px); mix-blend-mode: screen;
+  }
+
+  /* 上棱：1px 白 .77，只铺左边 50%，之后直接截断，模糊 1px */
+  .sheet .topline {
+    position: absolute; left: 0; top: 0; width: 100%; height: 1px; z-index: 3;
+    pointer-events: none; filter: blur(1px);
+    background: linear-gradient(90deg, rgba(255,255,255,.77) 0, rgba(255,255,255,0) 50%);
+  }
+
+  /* ── A：楔形双层 —— 内层裁形，外层模糊 ── */
+  .v-a .taper { position: absolute; left: 0; top: 0; bottom: 0; width: 7%; filter: blur(5px); pointer-events: none }
+  .v-a .taper > s {
+    position: absolute; left: 0; width: 100%; height: 12px; mix-blend-mode: screen;
+    background: rgba(255,60,190,.27);
+  }
+  .v-a .taper.t { top: 1px }
+  .v-a .taper.t > s { top: 0; clip-path: polygon(0 0, 100% 0, 0 100%) }
+  .v-a .taper.b { bottom: 1px }
+  .v-a .taper.b > s { bottom: 0; clip-path: polygon(0 100%, 100% 100%, 0 0) }
+
+  /* ── C：角部径向光斑 —— 没有条带，只有一个从角落散开的光团 ── */
+  .v-c .spot {
+    position: absolute; left: -6%; width: 46%; height: 26px; pointer-events: none;
+    mix-blend-mode: screen; filter: blur(5px);
+    background: radial-gradient(60% 120% at 0% 50%, rgba(255,60,190,.50), rgba(255,60,190,.18) 45%, rgba(255,60,190,0) 75%);
+  }
+  .v-c .spot.t { top: -6px }
+  .v-c .spot.b { bottom: -6px }
+
+  .btns { display: flex; gap: 8px; margin-top: 8px; align-items: center }
+  button { font: inherit; font-size: 12px; padding: 5px 12px; border-radius: 8px; cursor: pointer;
+    color: #dfe5ee; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12) }
+  button:hover { background: rgba(255,255,255,.12) }
+  button.primary { background: #4d6bfe; border-color: #4d6bfe; color: #fff }
+</style>
+</head>
+<body>
+
+<h1>棱线光 · A vs C</h1>
+<div class="tip">两者其它部分完全一样（左棱 3px 白、竖带白→白→品红、三层外柔光、跟随鼓起 17），只有上/下棱的粉光做法不同。</div>
+
+<svg width="0" height="0" style="position:absolute">
+  <filter id="liquid" x="-20%" y="-20%" width="140%" height="140%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.012 0.02" numOctaves="2" seed="7" result="noise">
+      <animate attributeName="baseFrequency" values="0.008 0.014;0.02 0.03;0.008 0.014" dur="0.8s" begin="indefinite" id="turb"/>
+    </feTurbulence>
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="0" xChannelSelector="R" yChannelSelector="G" id="disp">
+      <animate attributeName="scale" values="0;17;8;0" dur="0.8s" begin="indefinite" id="dispAnim"/>
+    </feDisplacementMap>
+    <feGaussianBlur stdDeviation="0.2" />
+  </filter>
+</svg>
+
+<div class="bar">
+  <span>放大</span>
+  <button onclick="zoom(1)">1×</button>
+  <button onclick="zoom(2)">2×</button>
+  <button onclick="zoom(3)">3×</button>
+  <button onclick="zoom(4)">4×</button>
+</div>
+
+<div class="grid">
+
+  <div class="case">
+    <h2>A · 楔形双层 <em>内层三角形裁形（7px→0）、外层 7px 模糊；上棱 1px 白 .77 只铺左半</em></h2>
+    <div class="box v-a hold" id="boxA">
+      <div class="spacer"><div class="row"><div class="left"><span class="lbl">今日</span><span class="val" style="opacity:.8;font-weight:500">20.1M tokens</span></div><span class="val accent">¥0.8451</span></div>
+        <div class="row"><div class="left"><span class="lbl">余额</span></div><span class="val">¥15.670</span></div>
+        <div class="row"><div class="left"><span class="dot"></span><span class="lbl" style="opacity:.75">周末</span><span class="lbl" style="opacity:.45">剩余 1天22时14分</span></div><span class="lbl" style="opacity:.4">周一 09:00 转峰时</span></div>
+        <div class="bar2"><i></i></div></div>
+      <div class="layer base"><div class="row"><div class="left"><span class="lbl">今日</span><span class="val" style="opacity:.8;font-weight:500">20.1M tokens</span></div><span class="val accent">¥0.8451</span></div>
+        <div class="row"><div class="left"><span class="lbl">余额</span></div><span class="val">¥15.670</span></div>
+        <div class="row"><div class="left"><span class="dot"></span><span class="lbl" style="opacity:.75">周末</span><span class="lbl" style="opacity:.45">剩余 1天22时14分</span></div><span class="lbl" style="opacity:.4">周一 09:00 转峰时</span></div>
+        <div class="bar2"><i></i></div></div>
+      <div class="layer warp"><div class="row"><div class="left"><span class="lbl">今日</span><span class="val" style="opacity:.8;font-weight:500">20.1M tokens</span></div><span class="val accent">¥0.8451</span></div>
+        <div class="row"><div class="left"><span class="lbl">余额</span></div><span class="val">¥15.670</span></div>
+        <div class="row"><div class="left"><span class="dot"></span><span class="lbl" style="opacity:.75">周末</span><span class="lbl" style="opacity:.45">剩余 1天22时14分</span></div><span class="lbl" style="opacity:.4">周一 09:00 转峰时</span></div>
+        <div class="bar2"><i></i></div></div>
+      <span class="sheet">
+        <b class="glow"><i class="topline"></i><i class="taper t"><s></s></i><i class="taper b"><s></s></i></b>
+      </span>
+    </div>
+    <div class="btns"><button class="primary" onclick="play('A')">重播 A</button><button onclick="bulgeHold('A')">鼓起定格</button></div>
+  </div>
+
+  <div class="case">
+    <h2>C · 角部径向 <em>不用条带，只是一个从角落散开的光团，靠自身衰减消失</em></h2>
+    <div class="box v-c hold" id="boxC">
+      <div class="spacer"><div class="row"><div class="left"><span class="lbl">今日</span><span class="val" style="opacity:.8;font-weight:500">20.1M tokens</span></div><span class="val accent">¥0.8451</span></div>
+        <div class="row"><div class="left"><span class="lbl">余额</span></div><span class="val">¥15.670</span></div>
+        <div class="row"><div class="left"><span class="dot"></span><span class="lbl" style="opacity:.75">周末</span><span class="lbl" style="opacity:.45">剩余 1天22时14分</span></div><span class="lbl" style="opacity:.4">周一 09:00 转峰时</span></div>
+        <div class="bar2"><i></i></div></div>
+      <div class="layer base"><div class="row"><div class="left"><span class="lbl">今日</span><span class="val" style="opacity:.8;font-weight:500">20.1M tokens</span></div><span class="val accent">¥0.8451</span></div>
+        <div class="row"><div class="left"><span class="lbl">余额</span></div><span class="val">¥15.670</span></div>
+        <div class="row"><div class="left"><span class="dot"></span><span class="lbl" style="opacity:.75">周末</span><span class="lbl" style="opacity:.45">剩余 1天22时14分</span></div><span class="lbl" style="opacity:.4">周一 09:00 转峰时</span></div>
+        <div class="bar2"><i></i></div></div>
+      <div class="layer warp"><div class="row"><div class="left"><span class="lbl">今日</span><span class="val" style="opacity:.8;font-weight:500">20.1M tokens</span></div><span class="val accent">¥0.8451</span></div>
+        <div class="row"><div class="left"><span class="lbl">余额</span></div><span class="val">¥15.670</span></div>
+        <div class="row"><div class="left"><span class="dot"></span><span class="lbl" style="opacity:.75">周末</span><span class="lbl" style="opacity:.45">剩余 1天22时14分</span></div><span class="lbl" style="opacity:.4">周一 09:00 转峰时</span></div>
+        <div class="bar2"><i></i></div></div>
+      <span class="sheet">
+        <b class="glow"><i class="spot t"></i><i class="spot b"></i></b>
+      </span>
+    </div>
+    <div class="btns"><button class="primary" onclick="play('C')">重播 C</button><button onclick="bulgeHold('C')">鼓起定格</button></div>
+  </div>
+
+</div>
+
+<script>
+  function zoom(z) {
+    const g = document.querySelector('.grid')
+    g.style.transform = 'scale(' + z + ')'
+    g.style.transformOrigin = 'top left'
+    g.style.marginBottom = (z > 1 ? (z - 1) * 620 : 0) + 'px'
+  }
+  function play(key) {
+    const box = document.getElementById('box' + key)
+    box.classList.remove('hold', 'on', 'bulging')
+    void box.offsetWidth
+    box.classList.add('on', 'bulging')
+    document.getElementById('dispAnim').beginElement()
+    document.getElementById('turb').beginElement()
+    setTimeout(() => {
+      box.classList.remove('on', 'bulging')
+      box.classList.add('hold')
+      document.getElementById('disp').setAttribute('scale', '0')
+    }, 1000)
+  }
+  function bulgeHold(key) {
+    const box = document.getElementById('box' + key)
+    box.classList.add('hold', 'bulging')
+    document.getElementById('disp').setAttribute('scale', '17')
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+{
+    "name":  "dsh-usage-hud",
+    "version":  "1.0.0",
+    "description":  "DSH 用量看板：侧栏底部「今日 tokens + 花费 / 余额 / 峰谷倒计时」+ 输入框下方本会话消耗",
+    "type":  "module",
+    "main":  "lib/index.js",
+    "exports":  {
+                    ".":  "./lib/index.js",
+                    "./client":  "./client.js",
+                    "./package.json":  "./package.json"
+                },
+    "dsh":  {
+                "bundle":  {
+                               "patch":  "./cordis.patch.yml"
+                           },
+                "client":  {
+                               "platform":  "web",
+                               "immediately":  true,
+                               "inject":  [
+                                              "@deepseek-ai/dsh-client-ui-sidebar",
+                                              "@deepseek-ai/dsh-client-ui-chat",
+                                              "@deepseek-ai/dsh-client-ui-conversation",
+                                              "@deepseek-ai/dsh-api-session-controller"
+                                          ]
+                           }
+            },
+    "peerDependencies":  {
+                             "@deepseek-ai/cordis":  "^4.0.1"
+                         },
+    "engines":  {
+                    "node":  "\u003e=22"
+                },
+    "license":  "MIT",
+    "repository":  {
+                       "type":  "git",
+                       "url":  "https://github.com/Shane-QS/dsh-usage-hud.git"
+                   }
+}
